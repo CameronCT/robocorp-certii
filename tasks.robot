@@ -10,9 +10,11 @@ Library           RPA.Tables
 Library           RPA.PDF
 Library           RPA.Archive
 Library           RPA.Robocorp.Vault
+Library           RPA.FileSystem
 
 *** Variables *** 
 ${useDir}           ${CURDIR}${/}data${/}
+${outputDir}        ${CURDIR}${/}files${/}
 
 *** Tasks ***
 Executing Task List
@@ -23,7 +25,8 @@ Executing Task List
 *** Keywords ***
 Download Orders
     ${websites}=    Get Secret    websites
-    Download    ${websites.csv}    overwrite=True
+    Log    websites
+    Download    ${websites}[csv]    overwrite=True
 
 Parse Orders 
     ${orders}=    Read table from CSV    orders.csv
@@ -32,7 +35,7 @@ Parse Orders
 
 Open Store
     ${websites}=    Get Secret    websites
-    Open Available Browser      ${websites.form}
+    Open Available Browser      ${websites}[form]
     Click Button                I guess so...
 
 Process Orders 
@@ -44,6 +47,8 @@ Process Orders
         Close Browser
     END
     Archive Files
+    Remove Files
+    [Teardown]    Close All Browsers
 
 Submit Order
     [Arguments]     ${order}
@@ -58,22 +63,29 @@ Submit Order
     ${isReceiptAvailable}=    Is Element Visible    //div[@id="receipt"]
 
     IF   ${isReceiptAvailable}
-        Process Order File     ${order}
+        Process Order File      ${order}
     ELSE 
-        Submit Order    ${order}
+        Submit Order            ${order}
     END
         
     Log    ${order}
 
 Process Order File 
-    [Arguments]     ${order}
-    Screenshot          //div[@id="robot-preview-image"]                 ${useDir}${order}[Order number].png
-    ${receiptData}=     Get Element Attribute    //div[@id="receipt"]    outerHTML
-    Html To Pdf         ${receiptData}    ${useDir}${order}[Order number].pdf
-    Add Watermark Image To Pdf    ${useDir}${order}[Order number].png    ${useDir}${order}[Order number].pdf    ${useDir}${order}[Order number].pdf
+    [Arguments]                     ${order}
+    Screenshot                      //div[@id="robot-preview-image"]                 ${useDir}${order}[Order number].png
+    ${receiptData}=                 Get Element Attribute    //div[@id="receipt"]    outerHTML
+    Html To Pdf                     ${receiptData}    ${useDir}${order}[Order number].pdf
+    Add Watermark Image To Pdf      ${useDir}${order}[Order number].png    ${useDir}${order}[Order number].pdf    ${useDir}${order}[Order number].pdf
+    Remove file                     ${useDir}${order}[Order number].png
+
+Remove Files 
+    ${files}=    List files in directory    ${outputDir}
+    FOR    ${file}  IN  @{FILES}
+        Remove file     ${file}
+    END
 
 Archive Files 
-    Archive Folder With Zip  ${CURDIR}${/}reciepts  ${OUTPUT_DIR}${/}reciepts.zip
+    Archive Folder With Zip  ${useDir}  ${outputDir}receipts.zip    True
     
 
 
