@@ -5,24 +5,38 @@ Documentation     Orders robots from RobotSpareBin Industries Inc.
 ...               Embeds the screenshot of the robot to the PDF receipt.
 ...               Creates ZIP archive of the receipts and the images.
 Library           RPA.Browser.Selenium    auto_close=${FALSE}
+Library           RPA.Dialogs
 Library           RPA.HTTP
 Library           RPA.Tables
 Library           RPA.PDF
 Library           RPA.Archive
 Library           RPA.Robocorp.Vault
 Library           RPA.FileSystem
+Library    Process
 
 *** Variables *** 
+${useCurDir}            ${CURDIR}${/}
 ${useDataDir}           ${CURDIR}${/}data${/}
-${useFilesDir}        ${CURDIR}${/}files${/}
+${useFilesDir}          ${CURDIR}${/}files${/}
 
 *** Tasks ***
 Executing Task List
-    Download Orders 
-    ${orders}=            Parse Orders
-    Process Orders        ${orders}
+    ${isHuman}=           Validate Is Human
+    IF     '${isHuman}' == 'YES'
+        Download Orders 
+        ${orders}=            Parse Orders
+        Process Orders        ${orders}
+    ELSE  
+        Log    "Not human"
+        Terminate All Processes     kill=True
+    END
 
 *** Keywords ***
+Validate Is Human
+    Add text input    validate    label=Type "YES" if you are a human
+    ${response}=    Run dialog
+    [Return]    ${response.validate}
+
 Download Orders
     ${websites}=    Get Secret    websites
     Log    websites
@@ -82,9 +96,10 @@ Remove All Files
     FOR    ${file}  IN  @{FILES}
         Remove file     ${file}
     END
-    Remove file     orders.csv
+    Remove file     ${useCurDir}orders.csv
 
 Archive Files 
+    Create Directory         ${useFilesDir}
     Archive Folder With Zip  ${useDataDir}  ${useFilesDir}receipts.zip    True
     
 
