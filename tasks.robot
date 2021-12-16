@@ -13,8 +13,8 @@ Library           RPA.Robocorp.Vault
 Library           RPA.FileSystem
 
 *** Variables *** 
-${useDir}           ${CURDIR}${/}data${/}
-${outputDir}        ${CURDIR}${/}files${/}
+${useDataDir}           ${CURDIR}${/}data${/}
+${useFilesDir}        ${CURDIR}${/}files${/}
 
 *** Tasks ***
 Executing Task List
@@ -47,7 +47,7 @@ Process Orders
         Close Browser
     END
     Archive Files
-    Remove Files
+    Remove All Files
     [Teardown]    Close All Browsers
 
 Submit Order
@@ -59,7 +59,6 @@ Submit Order
     Click Element                 //button[@id="preview"]
     Click Element                 //button[@id="order"]
 
-    Sleep     3
     ${isReceiptAvailable}=    Is Element Visible    //div[@id="receipt"]
 
     IF   ${isReceiptAvailable}
@@ -72,20 +71,21 @@ Submit Order
 
 Process Order File 
     [Arguments]                     ${order}
-    Screenshot                      //div[@id="robot-preview-image"]                 ${useDir}${order}[Order number].png
+    Screenshot                      //div[@id="robot-preview-image"]                 ${useDataDir}${order}[Order number].png
     ${receiptData}=                 Get Element Attribute    //div[@id="receipt"]    outerHTML
-    Html To Pdf                     ${receiptData}    ${useDir}${order}[Order number].pdf
-    Add Watermark Image To Pdf      ${useDir}${order}[Order number].png    ${useDir}${order}[Order number].pdf    ${useDir}${order}[Order number].pdf
-    Remove file                     ${useDir}${order}[Order number].png
+    Html To Pdf                     ${receiptData}    ${useDataDir}${order}[Order number].pdf
+    Add Watermark Image To Pdf      ${useDataDir}${order}[Order number].png    ${useDataDir}${order}[Order number].pdf    ${useDataDir}${order}[Order number].pdf
+    Remove file                     ${useDataDir}${order}[Order number].png
 
-Remove Files 
-    ${files}=    List files in directory    ${outputDir}
+Remove All Files 
+    ${files}=    List files in directory    ${useDataDir}
     FOR    ${file}  IN  @{FILES}
         Remove file     ${file}
     END
+    Remove file     orders.csv
 
 Archive Files 
-    Archive Folder With Zip  ${useDir}  ${outputDir}receipts.zip    True
+    Archive Folder With Zip  ${useDataDir}  ${useFilesDir}receipts.zip    True
     
 
 
