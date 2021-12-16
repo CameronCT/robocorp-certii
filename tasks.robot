@@ -12,7 +12,7 @@ Library           RPA.PDF
 Library           RPA.Archive
 Library           RPA.Robocorp.Vault
 Library           RPA.FileSystem
-Library    Process
+Library           Process
 
 *** Variables *** 
 ${useCurDir}            ${CURDIR}${/}
