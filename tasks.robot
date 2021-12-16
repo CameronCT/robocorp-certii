@@ -10,6 +10,7 @@ Library           RPA.Tables
 Library    RPA.PDF
 
 *** Variables *** 
+${useDir}           ${CURDIR}${/}data${/}
 ${csvUrl}           https://robotsparebinindustries.com/orders.csv
 ${orderUrl}         https://robotsparebinindustries.com/#/robot-order
 
@@ -47,18 +48,26 @@ Submit Order
     Click Element                 //input[@value="${order}[Body]"]
     Input Text                    //input[@type="number"]    ${order}[Legs]
     Input Text                    //input[@type="text"]    ${order}[Address]
+    Click Element                 //button[@id="preview"]
     Click Element                 //button[@id="order"]
-    Wait Until Page Contains Element    //div[@id="receipt"]
-        Process Order File    ${order}
 
+    Sleep     3
+    ${isReceiptAvailable}=    Is Element Visible    //div[@id="receipt"]
+
+    IF   ${isReceiptAvailable}
+        Process Order File     ${order}
+    ELSE 
+        Submit Order    ${order}
+    END
+        
     Log    ${order}
 
 Process Order File 
     [Arguments]     ${order}
-    Screenshot          //div[@id="robot-preview-image"]                 /_data/${order}[Order number].png
+    Screenshot          //div[@id="robot-preview-image"]                 ${useDir}${order}[Order number].png
     ${receiptData}=     Get Element Attribute    //div[@id="receipt"]    outerHTML
-    Html To Pdf        /_data/${order}[Order number].pdf    ${receiptData}
-    Add Watermark Image To Pdf    /${order}[Order number].png    /_data/${order}[Order number].pdf    /_data/${order}[Order number].pdf
+    Html To Pdf         ${receiptData}    ${useDir}${order}[Order number].pdf
+    Add Watermark Image To Pdf    ${useDir}${order}[Order number].png    ${useDir}${order}[Order number].pdf    ${useDir}${order}[Order number].pdf
 
 
     
