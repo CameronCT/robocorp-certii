@@ -7,6 +7,7 @@ Documentation     Orders robots from RobotSpareBin Industries Inc.
 Library           RPA.Browser.Selenium    auto_close=${FALSE}
 Library           RPA.HTTP
 Library           RPA.Tables
+Library    RPA.PDF
 
 *** Variables *** 
 ${csvUrl}           https://robotsparebinindustries.com/orders.csv
@@ -27,21 +28,39 @@ Parse Orders
     Log           Found Columns: ${orders.columns}
     [Return]      ${orders}
 
+Open Store
+    Open Available Browser      ${orderUrl}
+    Click Button                I guess so...
+
 Process Orders 
     [Arguments]     ${orders}
     FOR    ${row}    IN    @{orders}
         Open Store
+        Wait Until Page Contains Element     //button[@type="submit"]
         Submit Order    ${row}
         Close Browser
     END
 
 Submit Order
-    [Arguments]  ${order}
+    [Arguments]     ${order}
+    Select From List By Value     //select[@name="head"]    ${order}[Head]
+    Click Element                 //input[@value="${order}[Body]"]
+    Input Text                    //input[@type="number"]    ${order}[Legs]
+    Input Text                    //input[@type="text"]    ${order}[Address]
+    Click Element                 //button[@id="order"]
+    Wait Until Page Contains Element    //div[@id="receipt"]
+        Process Order File    ${order}
+
     Log    ${order}
 
-Open Store
-    Open Available Browser      ${orderUrl}
-    Click Button                I guess so...
+Process Order File 
+    [Arguments]     ${order}
+    Screenshot          //div[@id="robot-preview-image"]                 /_data/${order}[Order number].png
+    ${receiptData}=     Get Element Attribute    //div[@id="receipt"]    outerHTML
+    Html To Pdf        /_data/${order}[Order number].pdf    ${receiptData}
+    Add Watermark Image To Pdf    /${order}[Order number].png    /_data/${order}[Order number].pdf    /_data/${order}[Order number].pdf
+
 
     
+
 
