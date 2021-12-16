@@ -7,12 +7,12 @@ Documentation     Orders robots from RobotSpareBin Industries Inc.
 Library           RPA.Browser.Selenium    auto_close=${FALSE}
 Library           RPA.HTTP
 Library           RPA.Tables
-Library    RPA.PDF
+Library           RPA.PDF
+Library           RPA.Archive
+Library           RPA.Robocorp.Vault
 
 *** Variables *** 
 ${useDir}           ${CURDIR}${/}data${/}
-${csvUrl}           https://robotsparebinindustries.com/orders.csv
-${orderUrl}         https://robotsparebinindustries.com/#/robot-order
 
 *** Tasks ***
 Executing Task List
@@ -22,7 +22,8 @@ Executing Task List
 
 *** Keywords ***
 Download Orders
-    Download    ${csvUrl}    overwrite=True
+    ${websites}=    Get Secret    websites
+    Download    ${websites.csv}    overwrite=True
 
 Parse Orders 
     ${orders}=    Read table from CSV    orders.csv
@@ -30,7 +31,8 @@ Parse Orders
     [Return]      ${orders}
 
 Open Store
-    Open Available Browser      ${orderUrl}
+    ${websites}=    Get Secret    websites
+    Open Available Browser      ${websites.form}
     Click Button                I guess so...
 
 Process Orders 
@@ -41,6 +43,7 @@ Process Orders
         Submit Order    ${row}
         Close Browser
     END
+    Archive Files
 
 Submit Order
     [Arguments]     ${order}
@@ -69,7 +72,8 @@ Process Order File
     Html To Pdf         ${receiptData}    ${useDir}${order}[Order number].pdf
     Add Watermark Image To Pdf    ${useDir}${order}[Order number].png    ${useDir}${order}[Order number].pdf    ${useDir}${order}[Order number].pdf
 
-
+Archive Files 
+    Archive Folder With Zip  ${CURDIR}${/}reciepts  ${OUTPUT_DIR}${/}reciepts.zip
     
 
 
